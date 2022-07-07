@@ -1,3 +1,4 @@
+from copyreg import dispatch_table
 from xml.dom.minidom import Element
 from flask import Flask , render_template
 from flask_mysqldb import MySQL
@@ -101,14 +102,12 @@ def main():
             codeHTML = CodeHTML(url)
             html = codeHTML.getPage()
             stype = getype(productDir)
-            price = getPrice(productDir)
             name = getname(productDir)
             data["asinCode"] = productDir
             data["linkRoot"] = url
             data["name"] = name
-            data["price"] = price
             data["stype"] = stype
-            response = jsonify({"data" : data})
+            # response = jsonify({"data" : data})
             return {"response" : data }
 
     if __name__=='__main__':
