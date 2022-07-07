@@ -306,7 +306,7 @@ def getPrice2(codeAsin):
     delivery = htmlTest.find('span', id="contextualIngressPtLabel")
     # if(delivery):
     #     print(delivery.text.strip())
-    element = htmlTest.find('span', class_="a-size-medium a-color-price")
+    element = htmlTest.find('span', class_="a-offscreen")
     if(element):
         # print(element.text.strip())
         return element.text.strip()
