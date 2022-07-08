@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor , wait
 from operator import itemgetter
 from api.get_api import getAsin , getHTML , getInfos , getInfosThread , getlink , getPrice2 , getSizes , loadImages
 from api.get_api_gp import getPrice , getname , getype
-
+from api.get_price_asin import stype_link
 
 app = FlaskAPI(__name__)
 # app.config["MYSQL_HOST"] = 'localhost'
@@ -36,6 +36,7 @@ executor = ThreadPoolExecutor(max_workers=10)
 futures = []
 data = {}
 entryUrls = []
+test=[]
 
 
 def main():
@@ -109,8 +110,21 @@ def main():
             data["stype"] = stype
             # response = jsonify({"data" : data})
             return {"response" : data }
+    @app.route("/get_price_codeasin" ,methods=['POST'])
+    def get_price_codeasin():
+        response=[]
+        url = request.data.get('data','')
+        for i in url:
+            codeasin= i["codeasin"]
+            stype = i["stype"]
+            price_old = i["price"]
+            data1= stype_link( codeasin , stype , price_old)
+            response.append(data1)
+        return {"data": response} 
 
     if __name__=='__main__':
         app.run(debug=True)
+
+   
 
 main()

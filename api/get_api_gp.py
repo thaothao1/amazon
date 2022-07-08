@@ -15,7 +15,10 @@ from lxml import html
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor , wait
 from operator import itemgetter
+from distutils.command import check
 
+
+links=[]
 
 def getPrice(codeAsin):
     link = 'https://www.amazon.com/gp/product/{}/'.format(codeAsin)
@@ -68,45 +71,43 @@ def getype(codeAsin):
     link = 'https://www.amazon.com/gp/product/{}/'.format(codeAsin)
     codeHTML = CodeHTML(link)
     htmlTest = codeHTML.beautifulSoup()
-    link={}
+   
     codeasins = htmlTest.findAll("li" , class_ ="swatchAvailable")
     codeasin = htmlTest.findAll("li" , class_="swatchSelect")
     
     for code in codeasin:
-        texts_asin = str(code['id']+"_codeasin")
-        texts_color = str(code['id']+"_color")
+        link={}
         texts_price = str(code['id']+"_price")
-        texts_option = str(code['id']+"_option")
         st = str(code['title'])
         name_color = st[15:]
-        link[texts_asin]= code['data-defaultasin']
-        link[texts_color]= name_color
+        link["codeasin"]= code['data-defaultasin']
+        link["color"]= name_color
+        link["stype"]= "gp"
         element = htmlTest.find('span', id=texts_price)
         stt = element.text.strip()
         if "option" in stt:
-            link[texts_option] = stt[:9]
-            link[texts_price]= stt[14:]
+            link["option"] = stt[:9]
+            link["price"]= stt[14:]
         else:
-            link[texts_price] = element.text.strip()
-
+            link["price"] = element.text.strip()
+        links.append(link)
     for codes in codeasins:
-        texts_asin = str(codes['id']+"_codeasin")
-        texts_color = str(codes['id']+"_color")
+        link={}
         texts_price = str(codes['id']+"_price")
-        texts_option = str(codes['id']+"_option")
         st = str(codes['title'])
         name_color = st[15:]
-        link[texts_asin]= codes['data-defaultasin']
-        link[texts_color]= name_color
+        link["codeasin"]= codes['data-defaultasin']
+        link["color"]= name_color
+        link["stype"]= "gp"
         element = htmlTest.find('span', id=texts_price)
         tt = element.text.strip()
         if "option" in tt:
-            link[texts_option] = tt[:9]
-            link[texts_price]= tt[14:]
+            link["option"] = tt[:9]
+            link["price"]= tt[14:]
         else:
-            link[texts_price] = element.text.strip()
-
-    return link
+            link["price"] = element.text.strip()
+        links.append(link)
+    return links
 def getInfos():
     pass
 
