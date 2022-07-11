@@ -19,6 +19,7 @@ from operator import itemgetter
 from api.get_api import getAsin , getHTML , getInfos , getInfosThread , getlink , getPrice2 , getSizes , loadImages
 from api.get_api_gp import getPrice , getname , getype
 from api.get_price_asin import stype_link
+from api.get_zip_code import zip_code
 
 app = FlaskAPI(__name__)
 # app.config["MYSQL_HOST"] = 'localhost'
@@ -99,13 +100,14 @@ def main():
             global data
             data={}
             url = str(request.data.get('link_ref', ''))
-            productDir = getAsin(url)
-            codeHTML = CodeHTML(url)
-            html = codeHTML.getPage()
+            result = zip_code(url)
+            productDir = getAsin(result)
+            codeHTML = CodeHTML(result)
+            # html = codeHTML.getPage()
             stype = getype(productDir)
             name = getname(productDir)
             data["asinCode"] = productDir
-            data["linkRoot"] = url
+            data["linkRoot"] = result
             data["name"] = name
             data["stype"] = stype
             # response = jsonify({"data" : data})
@@ -118,13 +120,20 @@ def main():
             codeasin= i["codeasin"]
             stype = i["stype"]
             price_old = i["price"]
-            data1= stype_link( codeasin , stype , price_old)
+            data1= stype_link(codeasin , stype , price_old )
             response.append(data1)
         return {"data": response} 
 
+    @app.route("/get_zip_code" , methods=["POST"])
+    def get_zip_code():
+        url = request.data.get("data" , '')
+        result = zip_code(url)
+        return result
+
+
     if __name__=='__main__':
         app.run(debug=True)
-
+ 
    
 
 main()

@@ -340,8 +340,8 @@ def getInfosThread(codeASIN, size_name, infos, indexSort):
     # 		product = Product(title="N/A", amazon_codeASIN=codeASIN)
     # 		product.amazon_price = price
     # 		product.save()
-    info = {'codeASIN': codeASIN, 'sizeName': size_name,
-            'isSoldOut': isSoldOut, 'price': price, 'indexSort': indexSort}
+    info = {'codeASIN': codeASIN,'stype':'dp', 'sizeName': size_name,
+             'price': price}
     infos.append(info)
 
 
@@ -402,7 +402,7 @@ def getInfos(sizes, html, codeHTML, productDir):
             indexSort = sizes.index(size_name)
             # print("B", indexSort)
             future = executor.submit(
-                getInfosThread, codeASIN, size_name, infos, indexSort)
+                getInfosThread, codeASIN , size_name, infos, indexSort)
             futures.append(future)
     wait(futures)
     if infos == []:
@@ -415,8 +415,8 @@ def getInfos(sizes, html, codeHTML, productDir):
             isSoldOut = True
             if price != None:
                 isSoldOut = False
-            info = {'codeASIN': codeASIN, 'sizeName': None,
-                    'isSoldOut': isSoldOut, 'price': price}
+            info = {'codeASIN': codeASIN, 'stype':'dp','sizeName': None,
+                     'price': price}
             infos.append(info)
     print("END")
     return infos

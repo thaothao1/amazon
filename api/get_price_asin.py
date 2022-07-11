@@ -7,7 +7,7 @@ from api.get_api import getAsin , getHTML , getInfos , getInfosThread , getlink 
 from operator import itemgetter
 
 app = FlaskAPI(__name__)
-def stype_link(CodeAsin , stype , price_old):
+def stype_link(  CodeAsin , stype , price_old):
     #tyle_link1 :
     if stype == "gp":
         link1='https://www.amazon.com/gp/product/{}?th=1'.format(CodeAsin)
@@ -29,23 +29,17 @@ def getdata(link , stype , codeasin , price_old):
     codeHTML = CodeHTML(link)
     html = codeHTML.getPage()
     htmlTest = codeHTML.beautifulSoup()
-    type = htmlTest.find('label', class_ ="a-form-label")
-    str= type.text.strip()
+    type = htmlTest.find('div', class_ ="a-row a-spacing-micro")
+    st = type.text.strip()
     price_old = price_old
-    if "Size" in str:
-        sizes = getSizes(html)
-        info_sort=[]
-        try:
-            info = getInfos(sizes , html , codeHTML , codeasin)
-            info_sort = sorted(info, key=itemgetter('indexSort'))
-        except:
-            info_sort =[]
-        data= info_sort
+    if "Size:" in st:
+        data = getype1(codeasin, price_old)
     else:
-        data = getype1(codeasin , price_old)
+        data = getype2(codeasin , price_old)
+    
     return data
 
-def getype1(codeasin, price_old):
+def getype2(codeasin, price_old):
     link = 'https://www.amazon.com/gp/product/{}/'.format(codeasin)
     codeHTML = CodeHTML(link)
     htmlTest = codeHTML.beautifulSoup()
@@ -69,5 +63,20 @@ def getype1(codeasin, price_old):
             links["price_new"] = element.text.strip()
     return links
 
+def getype1(codeasin, price_old):
+    link = 'https://www.amazon.com/dp/{}?th=1&psc=1'.format(codeasin)
+    codeHTML = CodeHTML(link)
+    htmlTest = codeHTML.beautifulSoup()
+    links={}
+    links['codeasin'] = codeasin
+    links['stype'] = "dp"
+    color = htmlTest.find('span',class_='selection')
+    links['color'] = color.text.strip()
+    size = htmlTest.find('span',class_='a-dropdown-prompt')
+    links['size'] = size.text.strip()
+    links["price_old"] = price_old
+    price = htmlTest.find('span' , class_='a-offscreen')
+    links["price_new"]= price.text.strip()
+    return links
 
 
