@@ -7,4 +7,4 @@ ADD . /project_amazon
 
 RUN pip install -r  requirements.txt
 
-CMD ["python","amazon/main.py"]
+CMD ["python","/main.py"]

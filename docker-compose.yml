@@ -5,9 +5,6 @@ services:
     build: 
       context: .
       restart: unless-stopped
-      container_name: faceai
-      volumes:
-        - ./:/deliver
       ports:
-        - 8001:8000
-      command: bash -c "python amazon/main.py"
+        - 5000:5000
+      command: bash -c "python main.py"
