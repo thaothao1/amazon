@@ -39,7 +39,7 @@ def zip_code(link):
 
     time.sleep(1)
     input_zip_code = driver.find_element(By.ID,'GLUXZipUpdateInput')
-    input_zip_code.send_keys("99501")
+    input_zip_code.send_keys("90001")
 
     time.sleep(1)
     apply_button = driver.find_element(By.ID,'GLUXZipUpdate-announce')
@@ -47,6 +47,7 @@ def zip_code(link):
  
     input_url =link
     # driver.get(input_url)
+    
 
     # current_delivery = driver.find_element(By.XPATH,'//*[@id="glow-ingress-line2"]').get_attribute('innerHTML').strip()
     # print("Delivery To: " ,current_delivery)

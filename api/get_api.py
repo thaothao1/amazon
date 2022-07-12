@@ -1,28 +1,23 @@
-from xml.dom.minidom import Element
-from flask import Flask , render_template
-from flask_mysqldb import MySQL
 from Base import *
 import re
+import requests
 import glob
 import os
 import shutil
-from datetime import date , datetime , timedelta
+import json
+from datetime import date, datetime, timedelta
 import time
-from flask import request , url_for , send_file , jsonify , json
-from flask_api import FlaskAPI , status , exceptions
+
+from flask import request, url_for, send_file, jsonify
+from flask_api import FlaskAPI, status, exceptions
 from operator import itemgetter
 from lxml import html
+
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor , wait
+from concurrent.futures import ThreadPoolExecutor, wait
 from operator import itemgetter
 
 
-app = FlaskAPI(__name__)
-# app.config["MYSQL_HOST"] = 'localhost'
-# app.config["MYSQL_USER"] = 'root'
-# app.config["MYSQL_PASSWORD"] = ''
-# app.config['MYSQL_DB'] ='amazon'
-# mysql = MySQL(app)
 FORDER_IMAGE = os.path.join('tmp', '')
 # FORDER_IMAGE_UPLOAD = os.path.join('uploads', '')
 urlEntry = None
@@ -33,6 +28,7 @@ executor = ThreadPoolExecutor(max_workers=10)
 futures = []
 data = {}
 entryUrls = []
+
 
 def getAsin(link):
     codeAsin = None
@@ -62,7 +58,7 @@ def getHTML(url):
     return html
 
 
-def getSizes(html):
+def getSizes_sz(html):
     html = html.replace(';\n', ';<--hoa-->')
     html = html.replace('; //', ';<--hoa-->')
     html = html.replace('\n', ' ')
@@ -96,19 +92,19 @@ def getSizes(html):
     return sizes
 
 
-def loadImages(productDir, html, codeHTML):
+def loadImages_sz(productDir, html, codeHTML):
     global data
     global executor
     global future
     global futures
-    future = executor.submit(downloadImageInThread, productDir, html, codeHTML)
+    future = executor.submit(downloadImageInThread_sz, productDir, html, codeHTML)
     futures.append(future)
     # print("Add new thread download: {}".format(productDir))
     wait(futures)
     print("DONE Images")
 
 
-def download(pathFile, link, optimize=True):
+def download_sz(pathFile, link, optimize=True):
     # print("download: link = {}".format(link))
     if optimize == True:
         foundFiles = glob.glob("{}.*".format(pathFile))
@@ -116,7 +112,7 @@ def download(pathFile, link, optimize=True):
             # print('download exist path = {}'.format(foundFiles[0]))
             head, tail = os.path.split(foundFiles[0])
     imageTypes = {"image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg"}
-    r = request.get(link, stream=True)
+    r = requests.get(link, stream=True)
     if r.status_code == 200:
         contentType = r.headers['Content-Type']
         if contentType in imageTypes:
@@ -128,7 +124,7 @@ def download(pathFile, link, optimize=True):
     pass
 
 
-def downloadImageInThread(productDir, html, codeHTML):
+def downloadImageInThread_sz(productDir, html, codeHTML):
     global data
     # tkMessageBox.showinfo( "Error!", "Step 1")
     try:
@@ -136,7 +132,7 @@ def downloadImageInThread(productDir, html, codeHTML):
         mask = """var obj = jQuery.parseJSON\\('(.+)'\\);"""
         isFound = False
         matchs = re.findall(mask, html, re.M)
-        # print("CHECK ", html)
+        print("CHECK ", html)
 
         for m in matchs:
             if m:
@@ -150,7 +146,7 @@ def downloadImageInThread(productDir, html, codeHTML):
                 data["images"] = []
                 # print(landingAsinColor, obj["colorImages"])
                 data["landingAsinColor"] = landingAsinColor
-                # print("CHECK ", obj["colorImages"])
+                print("CHECK ", obj["colorImages"])
                 for key, images in obj["colorImages"].items():  # python 3
                     if landingAsinColor != None and key != landingAsinColor:
                         # if key == None:
@@ -186,7 +182,7 @@ def downloadImageInThread(productDir, html, codeHTML):
                             continue
                         # print("image = {}".format(linkImage))
                         pathFile = "{}/image_{}".format(path, idx)
-                        download(pathFile, linkImage)
+                        download_sz(pathFile, linkImage)
                 print("DONE")
         if isFound == False:
             print("Tiep tuc tim kiem!")
@@ -195,7 +191,7 @@ def downloadImageInThread(productDir, html, codeHTML):
             title = None
             # print("----", productColor)
             if productColor != None:
-                # print("productColor = ", productColor)
+                print("productColor = ", productColor)
                 title = productColor.text.strip()
                 title = title.replace('Color: ', '')
                 title = title.replace(' +', ' ')
@@ -267,7 +263,7 @@ def downloadImageInThread(productDir, html, codeHTML):
                                 continue
                             # print("image = {}".format(linkImage))
                             pathFile = "{}/image_{}".format(path, idx)
-                            download(pathFile, linkImage)
+                            download_sz(pathFile, linkImage)
 
                     print("DONE")
         if isFound == False:
@@ -277,19 +273,17 @@ def downloadImageInThread(productDir, html, codeHTML):
     pass
 
 
-def getPrice2(codeAsin):
+def getPrice_sz(codeAsin):
     link = 'https://www.amazon.com/dp/{}?th=1&psc=1'.format(codeAsin)
     codeHTML = CodeHTML(link)
     root = codeHTML.tree()
     elements = root.xpath(
         '//*/td[@class="a-span12"]/span[@id="priceblock_ourprice"]')
     if elements != None and len(elements) != 0:
-
         return elements[0].text.strip()
     elements = root.xpath(
         '//*/td[@class="a-span12"]/span[@id="priceblock_saleprice"]')
     if elements != None and len(elements) != 0:
-
         return elements[0].text.strip()
 
     elements = root.xpath(
@@ -299,34 +293,46 @@ def getPrice2(codeAsin):
         str = html.tostring(element, encoding='utf-8').decode("utf-8")
         mask = """(\\$[0-9\\.]+)"""
         matchs = re.findall(mask, str)
-
         for m in matchs:
             return m
     htmlTest = codeHTML.beautifulSoup()
     delivery = htmlTest.find('span', id="contextualIngressPtLabel")
-    # if(delivery):
-    #     print(delivery.text.strip())
-    element = htmlTest.find('span', class_="a-offscreen")
+    if(delivery):
+        print(delivery.text.strip())
+    element = htmlTest.find('span', class_="a-size-medium a-color-price")
     if(element):
-        # print(element.text.strip())
+        print(element.text.strip())
         return element.text.strip()
     return None
 
-def getlink(html):
-    pass
+def getstype_sz(codeasin):
+    link ='https://www.amazon.com/dp/{}?th=1&psc=1'.format(codeasin)
+    codeHTML = CodeHTML(link)
+    html = codeHTML.getPage()
+    htmlTest = codeHTML.beautifulSoup()
+    type = htmlTest.find('div', class_ ="a-row a-spacing-micro")
+    if (type):
+        st = type.text.strip()
+        if "Size:" in st:
+            return "size"
+        else:
+            return "stype"
+    else:
+        return "stype"
 
-def getInfosThread(codeASIN, size_name, infos, indexSort):
+
+def getInfosThread_sz(codeASIN, size_name, infos, indexSort):
     isFind = False
     isSoldOut = False
     product = None
-    # print(f"START {codeASIN} - {size_name}")
+    print(f"START {codeASIN} - {size_name}")
     # products = Product.objects(amazon_codeASIN=codeASIN)
     # if products.count() > 0:
     # 	isFind = True
     # 	if products.count() > 1:
     # 		print("Loi dupliacation database: amazon_codeASIN= {}".format(codeASIN))
     # 	product = products[0]
-    price = getPrice2(codeASIN)
+    price = getPrice_sz(codeASIN)
     # print(f"END {price}")
     # if price == None:
     # 	isSoldOut = True
@@ -340,14 +346,15 @@ def getInfosThread(codeASIN, size_name, infos, indexSort):
     # 		product = Product(title="N/A", amazon_codeASIN=codeASIN)
     # 		product.amazon_price = price
     # 		product.save()
-    info = {'codeASIN': codeASIN,'stype':'dp', 'sizeName': size_name,
-             'price': price}
+    info = {'codeasin': codeASIN, 'sizeName': size_name,  
+            'isSoldOut': isSoldOut, 'price': price, 'indexSort': indexSort , 'stype':'dp'}
     infos.append(info)
 
 
-def getInfos(sizes, html, codeHTML, productDir):
+def getInfos_sz(sizes, html, codeHTML, productDir):
     print("START")
     executor = ThreadPoolExecutor(max_workers=30)
+    stype ="dp"
     futures = []
     infos = []
     html = html.replace(';\n', ';<--hoa-->')
@@ -397,26 +404,119 @@ def getInfos(sizes, html, codeHTML, productDir):
             if sizes != [] and size_name not in sizes:
                 continue
             codeASIN = value['ASIN']
-            # print(sizes)
+            print(sizes)
             # print("A", value['ASIN'], size_name)
             indexSort = sizes.index(size_name)
             # print("B", indexSort)
             future = executor.submit(
-                getInfosThread, codeASIN , size_name, infos, indexSort)
+                getInfosThread_sz, codeASIN, size_name, infos, indexSort , stype)
             futures.append(future)
     wait(futures)
     if infos == []:
         priceElement = codeHTML.elementWithXpath(
             '//*[@id="priceblock_ourprice"]')
-        # print("priceElement = ", priceElement)
+        print("priceElement = ", priceElement)
         if priceElement != None:
             price = priceElement.text.strip()
             codeASIN = productDir
             isSoldOut = True
             if price != None:
                 isSoldOut = False
-            info = {'codeASIN': codeASIN, 'stype':'dp','sizeName': None,
-                     'price': price}
+            info = {'codeasin': codeASIN, 'sizeName': None,
+                    'isSoldOut': isSoldOut, 'price': price , 'stype':'dp'}
             infos.append(info)
     print("END")
     return infos
+
+
+link={}
+links=[]
+
+def getPrice_t(codeAsin):
+    link = link ='https://www.amazon.com/dp/{}?th=1&psc=1'.format(codeAsin)
+    codeHTML = CodeHTML(link)
+    root = codeHTML.tree()
+    elements = root.xpath(
+        '//*/td[@class="a-span12"]/span[@id="priceblock_ourprice"]')
+    if elements != None and len(elements) != 0:
+        return elements[0].text.strip()
+    elements = root.xpath(
+        '//*/td[@class="a-span12"]/span[@id="priceblock_saleprice"]')
+    if elements != None and len(elements) != 0:
+        return elements[0].text.strip()
+
+    elements = root.xpath(
+        '//*/div[@class="a-section a-spacing-small a-spacing-top-small"]/div[@id="olp-upd-new"]/span/a')
+    if elements != None and len(elements) != 0:
+        element = elements[0]
+        str = html.tostring(element, encoding='utf-8').decode("utf-8")
+        mask = """(\\$[0-9\\.]+)"""
+        matchs = re.findall(mask, str)
+
+        for m in matchs:
+            return m
+    htmlTest = codeHTML.beautifulSoup()
+    # delivery = htmlTest.find('span', id="a-offscreen")
+    # if(delivery):
+    #     print(delivery.text.strip())
+    element = htmlTest.find('span', class_="a-offscreen")
+    if(element):
+        print(element.text.strip())
+        return element.text.strip()
+    return None
+
+def getname_t(codeAsin):
+    link = link ='https://www.amazon.com/dp/{}?th=1&psc=1'.format(codeAsin)
+    codeHTML = CodeHTML(link)
+    htmlTest = codeHTML.beautifulSoup()
+    delivery = htmlTest.find('span', id="productTitle")
+    if(delivery):
+        print(delivery.text.strip())
+        return delivery.text.strip()
+    element = htmlTest.find('span', class_="a-size-large product-title-word-break")
+    if(element):
+        print(element.text.strip())
+        return element.text.strip()
+    return None
+
+def getype_t(codeAsin):
+    link = link ='https://www.amazon.com/dp/{}?th=1&psc=1'.format(codeAsin)
+    codeHTML = CodeHTML(link)
+    htmlTest = codeHTML.beautifulSoup()
+   
+    codeasins = htmlTest.findAll("li" , class_ ="swatchAvailable")
+    codeasin = htmlTest.findAll("li" , class_="swatchSelect")
+    
+    for code in codeasin:
+        link={}
+        texts_price = str(code['id']+"_price")
+        st = str(code['title'])
+        name_color = st[15:]
+        link["codeasin"]= code['data-defaultasin']
+        link["color"]= name_color
+        link["stype"]= "gp"
+        element = htmlTest.find('span', id=texts_price)
+        stt = element.text.strip()
+        if "option" in stt:
+            link["option"] = stt[:9]
+            link["price"]= stt[14:]
+        else:
+            link["price"] = element.text.strip()
+        links.append(link)
+    for codes in codeasins:
+        link={}
+        texts_price = str(codes['id']+"_price")
+        st = str(codes['title'])
+        name_color = st[15:]
+        link["codeasin"]= codes['data-defaultasin']
+        link["color"]= name_color
+        link["stype"]= "gp"
+        element = htmlTest.find('span', id=texts_price)
+        tt = element.text.strip()
+        if "option" in tt:
+            link["option"] = tt[:9]
+            link["price"]= tt[14:]
+        else:
+            link["price"] = element.text.strip()
+        links.append(link)
+    return links

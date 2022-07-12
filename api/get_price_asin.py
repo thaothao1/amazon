@@ -2,7 +2,7 @@ from flask import Flask , render_template
 from flask_mysqldb import MySQL
 from Base import *
 from flask_api import FlaskAPI
-from api.get_api import getAsin , getHTML , getInfos , getInfosThread , getlink , getPrice2 , getSizes , loadImages
+from api.get_api import getAsin , getHTML , getname_t , getInfos_sz , getInfosThread_sz , getPrice_sz , getPrice_t , getSizes_sz , getstype_sz , getype_t
 
 from operator import itemgetter
 
@@ -29,14 +29,24 @@ def getdata(link , stype , codeasin , price_old):
     codeHTML = CodeHTML(link)
     html = codeHTML.getPage()
     htmlTest = codeHTML.beautifulSoup()
-    type = htmlTest.find('div', class_ ="a-row a-spacing-micro")
-    st = type.text.strip()
     price_old = price_old
-    if "Size:" in st:
-        data = getype1(codeasin, price_old)
+    type = htmlTest.find('div', class_ ="a-row a-spacing-micro")
+    if (type):
+        st = type.text.strip()
+    
+        if "Size:" in st:
+            sizes = getSizes_sz(html)
+            info_sort=[]
+            try:
+                info = getInfos_sz(sizes , html , codeHTML , codeasin)
+                info_sort = sorted(info, key=itemgetter('indexSort'))
+            except:
+                info_sort =[]
+            data= info_sort
+        else:
+            data = getype2(codeasin , price_old)
     else:
         data = getype2(codeasin , price_old)
-    
     return data
 
 def getype2(codeasin, price_old):
