@@ -1,23 +1,23 @@
 from copyreg import dispatch_table
 from xml.dom.minidom import Element
-from flask import Flask , render_template
+from flask import Flask, render_template
 from flask_mysqldb import MySQL
 from Base import *
 import re
 import glob
 import os
 import shutil
-from datetime import date , datetime , timedelta
+from datetime import date, datetime, timedelta
 import time
-from flask import request , url_for , send_file , jsonify , json
-from flask_api import FlaskAPI , status , exceptions
+from flask import request, url_for, send_file, jsonify, json
+from flask_api import FlaskAPI, status, exceptions
 from operator import itemgetter
 from lxml import html
 from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor , wait
+from concurrent.futures import ThreadPoolExecutor, wait
 from operator import itemgetter
-from api.get_api import getAsin , getHTML , getInfos , getInfosThread , getlink , getPrice2 , getSizes , loadImages
-from api.get_api_gp import getPrice , getname , getype
+from api.get_api import getAsin, getHTML, getInfos, getInfosThread, getlink, getPrice2, getSizes, loadImages
+from api.get_api_gp import getPrice, getname, getype
 from api.get_price_asin import stype_link
 
 app = FlaskAPI(__name__)
@@ -36,7 +36,7 @@ executor = ThreadPoolExecutor(max_workers=10)
 futures = []
 data = {}
 entryUrls = []
-test=[]
+test = []
 
 
 def main():
@@ -67,7 +67,8 @@ def main():
         # header['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         # header['Access-Control-Allow-Methods'] = 'OPTIONS, HEAD, GET, POST, DELETE, PUT'
         return response
-    @app.route("/get_product_amazon" , methods=['POST'])
+
+    @app.route("/get_product_amazon", methods=['POST'])
     def getAllImage():
         global data
         data = {}
@@ -93,38 +94,37 @@ def main():
         # Enable Access-Control-Allow-Origin
         return response
 
-
-    @app.route("/get_amazon" , methods=['POST'])
+    @app.route("/get_amazon", methods=['POST'])
     def get_all():
-            global data
-            data={}
-            url = str(request.data.get('link_ref', ''))
-            productDir = getAsin(url)
-            codeHTML = CodeHTML(url)
-            html = codeHTML.getPage()
-            stype = getype(productDir)
-            name = getname(productDir)
-            data["asinCode"] = productDir
-            data["linkRoot"] = url
-            data["name"] = name
-            data["stype"] = stype
-            # response = jsonify({"data" : data})
-            return {"response" : data }
-    @app.route("/get_price_codeasin" ,methods=['POST'])
+        global data
+        data = {}
+        url = str(request.data.get('link_ref', ''))
+        productDir = getAsin(url)
+        codeHTML = CodeHTML(url)
+        html = codeHTML.getPage()
+        stype = getype(productDir)
+        name = getname(productDir)
+        data["asinCode"] = productDir
+        data["linkRoot"] = url
+        data["name"] = name
+        data["stype"] = stype
+        # response = jsonify({"data" : data})
+        return {"response": data}
+
+    @app.route("/get_price_codeasin", methods=['POST'])
     def get_price_codeasin():
-        response=[]
-        url = request.data.get('data','')
+        response = []
+        url = request.data.get('data', '')
         for i in url:
-            codeasin= i["codeasin"]
+            codeasin = i["codeasin"]
             stype = i["stype"]
             price_old = i["price"]
-            data1= stype_link( codeasin , stype , price_old)
+            data1 = stype_link(codeasin, stype, price_old)
             response.append(data1)
-        return {"data": response} 
+        return {"data": response}
 
-    if __name__=='__main__':
-        app.run(debug=True)
+    if __name__ == '__main__':
+        app.run(debug=True, host="0.0.0.0", port="5000")
 
-   
 
 main()

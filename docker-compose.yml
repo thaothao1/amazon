@@ -1,0 +1,9 @@
+version: '3.1'
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    container_name: amazon
+    ports:
+      - 5000:5000
