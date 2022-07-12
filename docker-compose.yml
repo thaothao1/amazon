@@ -1,9 +1,15 @@
-version: '3.1'
+version: '3'
 
 services:
   web:
     build: .
     restart: unless-stopped
     container_name: amazon
+    volumes:
+      - ./:/deliver
     ports:
       - 5000:5000
+    environment:
+      - FLASK_APP=main.py
+      - FLASK_RUN_HOST=0.0.0.0
+    command: bash -c "python main.py"
